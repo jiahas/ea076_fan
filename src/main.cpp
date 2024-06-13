@@ -14,7 +14,7 @@ LiquidCrystal lcd(4, 5, 7, 8, 9, 10);
 //Variaveis para contar os pulsos e a velocidade em RPM
 float rpm = 7689.433;
 volatile unsigned int count_display = 0;
-
+volatile unsigned int count_rpm = 0;
 void setup(){
 
   // Desabilita interrupcoes globais
@@ -228,10 +228,12 @@ char* read_serial(){
 //Varredura padrao
 void loop(){
   _delay_ms(1);
+  rpm = 60*count_rpm/2;
   exibirNumero(rpm);
   show_lcd(rpm); // Exibe a velocidade em RPM no LCD
   char* answer = read_serial();
   check_serial(answer);
+  rpm = 0;
 }
 
 //Habilita PCMSK2 para aceitar interrupcoes atraves do Pino 6 do Arduino
@@ -319,7 +321,5 @@ ISR(TIMER0_COMPA_vect){
 
 //A interrupcao verifica o estado do pino 6, para ver se o botao foi apertado
 ISR(PCINT2_vect){
-  if(digitalRead(6) == 1){
-
-  }
+  count_rpm++;
 }
