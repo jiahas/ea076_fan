@@ -28,41 +28,6 @@ volatile unsigned int count_rot = 0;
 
 bool state = false;
 
-//Realiza as configuracoes iniciais do arduino
-void setup(){
-
-  // Desabilita interrupcoes globais
-  cli();
-
-  //Inicializa o LCD com os pinos da interface
-  lcd.begin(16, 2);
-
-  // Inicializa a comunicacao I2C
-  Wire.begin();
-
-  //Define pinos de I/O
-  pinMode(13,OUTPUT);
-  pinMode(12,OUTPUT);
-  pinMode(11,OUTPUT);
-  pinMode(10,OUTPUT);
-  pinMode(9,OUTPUT);
-  pinMode(8,OUTPUT);
-  pinMode(7,OUTPUT);
-  pinMode(6,OUTPUT);
-  pinMode(5,OUTPUT);
-  pinMode(4,INPUT);
-
-  //Configura registradores
-  configuracao_Timer0(); // Timer para count
-  configuracao_Timer2(); // Timer no modo PWM
-
-  // Habilita interrupcoes globais
-  sei();
-
-  // Habilita Serial com baud rate 9600
-  //Serial.begin(9600);
-}
-
 // Define os segmentos para os numeros de 0 a 9
 const byte digitos[10] = {
   B11111100,  // 0
@@ -296,26 +261,6 @@ char* read_serial(){
   }
 }
 
-//Varredura padrao
-void loop(){
-  _delay_ms(1); //Para simulacao no Tinkercad
-
-  if (count_rpm >= 125){
-    rpm = 60*count_rpm/(2*count_rot);
-    count_rpm = 0;
-  }
-
-  //Exibir nos displays de 7 segmentos a velocidade em rpm
-  exibirNumero(rpm);
-
-  //Exibir no LCD a velocidade em rpm
-  show_lcd(rpm);
-
-  //Utilizar o comando para verificar qual acao realizar no motor
-  char* answer = read_serial();
-  check_serial(answer);
-}
-
 //Configura os registradores para verificar interrupcoes na entrada
 //digital do pino 6 para receber sinais do codificador optico
 void configuracao_Int_Codificador_Optico(){
@@ -396,9 +341,63 @@ ISR(TIMER0_COMPA_vect){
 ISR(PCINT2_vect){
   if (count_rot >= 75){
     state = false;
-    count_rot = 0;
   } else if (count_rot == 0){
     state = true;
   }
   count_rot++;
+}
+
+//Realiza as configuracoes iniciais do arduino
+void setup(){
+
+  // Desabilita interrupcoes globais
+  cli();
+
+  //Inicializa o LCD com os pinos da interface
+  lcd.begin(16, 2);
+
+  // Inicializa a comunicacao I2C
+  Wire.begin();
+
+  //Define pinos de I/O
+  pinMode(13,OUTPUT);
+  pinMode(12,OUTPUT);
+  pinMode(11,OUTPUT);
+  pinMode(10,OUTPUT);
+  pinMode(9,OUTPUT);
+  pinMode(8,OUTPUT);
+  pinMode(7,OUTPUT);
+  pinMode(6,OUTPUT);
+  pinMode(5,OUTPUT);
+  pinMode(4,INPUT);
+
+  //Configura registradores
+  configuracao_Timer0(); // Timer para count
+  configuracao_Timer2(); // Timer no modo PWM
+
+  // Habilita interrupcoes globais
+  sei();
+
+  // Habilita Serial com baud rate 9600
+  Serial.begin(9600);
+}
+
+//Varredura padrao
+void loop(){
+
+  if (count_rpm >= 125){
+    rpm = 60*count_rpm/(2*count_rot);
+    count_rpm = 0;
+    count_rot = 0;
+  }
+
+  //Exibir nos displays de 7 segmentos a velocidade em rpm
+  exibirNumero(rpm);
+
+  //Exibir no LCD a velocidade em rpm
+  show_lcd(rpm);
+
+  //Utilizar o comando para verificar qual acao realizar no motor
+  char* answer = read_serial();
+  check_serial(answer);
 }
