@@ -13,7 +13,7 @@ char str[9];
 char str_2[9];
 
 // Converten o valor de rpm em numero inteiro de 4 digitos
-char rpm_4[5];
+char lcd_rpm[16];
 
 int digitosExibidos[4]; //Guarda os 4 digitos a serem exibidos
 
@@ -93,22 +93,19 @@ void exibirNumero(int n) {
 //Exibe no LCD a estimativa para rotacao do motor em rpm
 void show_lcd(int rpm){
 
-  dtostrf(rpm, 4, 0, rpm_4);
-
-  //lcd.clear();
+  snprintf(lcd_rpm,sizeof(lcd_rpm),"ROTACAO:%04dRPM",rpm);
   //Coloca o cursor na primeira coluna e primeira linha
   lcd.setCursor(0, 0);
 
   //Escreve o texto da rotacao do motor em rpm
-  lcd.print("ROTACAO:");
-  lcd.print(rpm_4);
-  lcd.print(" RPM");
+  // lcd.print(lcd_rpm);
+  lcd.print(lcd_rpm);
 
   //Coloca o cursor na terceira coluna e segunda linha
-  lcd.setCursor(2, 1);
+  lcd.setCursor(0, 1);
 
   //Escreve o texto centrado na segunda linha do LCD
-  lcd.print("(ESTIMATIVA)");
+  lcd.print(" (ESTIMATIVA)  ");
 }
 
 //Configura o Arduino para mandar os sinais para acionamento do motor
@@ -357,6 +354,7 @@ void setup(){
 
   //Inicializa o LCD com os pinos da interface
   lcd.begin(16, 2);
+  lcd.clear();
 
   // Inicializa a comunicacao I2C
   Wire.begin();
@@ -386,10 +384,8 @@ void setup(){
 
 //Varredura padrao
 void loop(){
-  delay(1);
   if (count > 75){
     rpm = count_rpm*60;
-    Serial.println(rpm);
   	count = 0;
     count_rpm = 0;
 
