@@ -334,7 +334,7 @@ void configuracao_Timer2(){
   TCCR2A |= (1 << COM2A1)| (1 << WGM21) | (0 << WGM20);
 
   // Prescaler de 8 (freq = 16MHz / 8 / 256 = 7812.5 Hz)
-  TCCR2B = (1 << CS21);
+  TCCR2B = (1 << CS22);
 
 }
 
@@ -393,12 +393,11 @@ void loop(){
   	count = 0;
     count_rpm = 0;
 
+    //Exibir no LCD a velocidade em rpm
+    show_lcd(rpm);
   }
   //Exibir nos displ ays de 7 segmentos a velocidade em rpm
   exibirNumero(rpm);
-
-  //Exibir no LCD a velocidade em rpm
-  show_lcd(rpm);
 
   if(Serial.available()){
     //Utilizar o comando para verificar qual acao realizar no motor
