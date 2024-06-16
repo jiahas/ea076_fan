@@ -12,6 +12,16 @@ String str_serial;
 char str[9];
 char str_2[9];
 
+// Converten o valor de rpm em numero inteiro de 4 digitos
+char rpm_4[5];
+
+int digitosExibidos[4]; //Guarda os 4 digitos a serem exibidos
+
+//Enderecos das portas de dados do PCF8574 para determinar qual display vai ligar
+int enderecos[4] = {0x70, 0xB0, 0xD0, 0xE0};
+
+volatile unsigned int time1 = 0;
+
 //Cria uma variavel do tipo LiquidCrystal
 LiquidCrystal lcd(4, 5, 7, 8, 9, 10);
 
@@ -19,14 +29,13 @@ LiquidCrystal lcd(4, 5, 7, 8, 9, 10);
 int rpm = 0;
 
 //Counter para habilitar um display por vez
-volatile unsigned int count_display = 0;
+volatile unsigned int count = 0;
+
+//Counter para habilitar um display por vez
+unsigned int count_display = 0;
 
 //Counter para realizar a conta do rpm
 volatile unsigned int count_rpm = 0;
-
-volatile unsigned int count_rot = 0;
-
-bool state = false;
 
 // Define os segmentos para os numeros de 0 a 9
 const byte digitos[10] = {
@@ -45,11 +54,6 @@ const byte digitos[10] = {
 // Função para exibir um número de 4 digitos em displays de 7 segmentos
 void exibirNumero(int n) {
 
-  int digitosExibidos[4]; //Guarda os 4 digitos a serem exibidos
-
-  //Enderecos das portas de dados do PCF8574 para determinar qual display vai ligar
-  int enderecos[4] = {0x70, 0xB0, 0xD0, 0xE0};
-
   // Separa o numero em digitos
   for (int i = 3; i >= 0; i--) {
     digitosExibidos[i] = n % 10;
@@ -60,14 +64,26 @@ void exibirNumero(int n) {
   Wire.beginTransmission(PCF8574_ADDRESS);
 
   //Soma o endereco de qual display vai ligar e qual numero ira exibir
-  if(count_display == 0){
+  switch (count_display)
+  {
+  case 0:
     Wire.write(enderecos[0]+digitosExibidos[0]); //Milhar
-  } else if(count_display == 1){
+    count_display++;
+    break;
+  case 1:
     Wire.write(enderecos[1]+digitosExibidos[1]); //Centena
-  } else if(count_display == 2){
+    count_display++;
+    break;
+  case 2:
     Wire.write(enderecos[2]+digitosExibidos[2]); //Dezena
-  } else {
+    count_display++;
+    break;
+  case 3:
     Wire.write(enderecos[3]+digitosExibidos[3]); //Unidade
+    count_display = 0;
+    break;
+  default:
+    break;
   }
 
   //Finaliza comunicacao com o PCF8574
@@ -77,8 +93,6 @@ void exibirNumero(int n) {
 //Exibe no LCD a estimativa para rotacao do motor em rpm
 void show_lcd(int rpm){
 
-  // Converten o valor de rpm em numero inteiro de 4 digitos
-  char rpm_4[5];
   dtostrf(rpm, 4, 0, rpm_4);
 
   //lcd.clear();
@@ -246,7 +260,6 @@ void return_serial(const String &str_serial){
 
 //Verifica se a entrada serial recebeu algum comando
 char* read_serial(){
-  if(Serial.available()){
     //Serial.write(0x0C); //Para limpar o terminal antes de printar a saida
 
 	//Se recebeu um comando, coletar ate o caractere de parada "*"
@@ -258,7 +271,6 @@ char* read_serial(){
 	//Retornar para a loop o comando no formato de CharArray
     str_serial.toCharArray(str_2, 8);
     return str_2;
-  }
 }
 
 //Configura os registradores para verificar interrupcoes na entrada
@@ -328,23 +340,13 @@ void configuracao_Timer2(){
 
 // Rotina de servico de interrupcao do temporizador 0 (Para Loop)
 ISR(TIMER0_COMPA_vect){
-  count_display++;
-  if (count_display > 4){
-     count_display = 0;
-  }
-  if (state){
-    count_rpm++;
-  }
+  count++;
+
 }
 
 //A interrupcao verifica o estado do pino 6, para ver se o botao foi apertado
 ISR(PCINT2_vect){
-  if (count_rot >= 75){
-    state = false;
-  } else if (count_rot == 0){
-    state = true;
-  }
-  count_rot++;
+  count_rpm++;
 }
 
 //Realiza as configuracoes iniciais do arduino
@@ -367,14 +369,14 @@ void setup(){
   pinMode(9,OUTPUT);
   pinMode(8,OUTPUT);
   pinMode(7,OUTPUT);
-  pinMode(6,OUTPUT);
+  pinMode(6,INPUT);
   pinMode(5,OUTPUT);
   pinMode(4,INPUT);
 
   //Configura registradores
   configuracao_Timer0(); // Timer para count
   configuracao_Timer2(); // Timer no modo PWM
-
+  configuracao_Int_Codificador_Optico();
   // Habilita interrupcoes globais
   sei();
 
@@ -384,20 +386,23 @@ void setup(){
 
 //Varredura padrao
 void loop(){
-
-  if (count_rpm >= 125){
-    rpm = 60*count_rpm/(2*count_rot);
+  delay(1);
+  if (count > 75){
+    rpm = count_rpm*60;
+    Serial.println(rpm);
+  	count = 0;
     count_rpm = 0;
-    count_rot = 0;
-  }
 
-  //Exibir nos displays de 7 segmentos a velocidade em rpm
+  }
+  //Exibir nos displ ays de 7 segmentos a velocidade em rpm
   exibirNumero(rpm);
 
   //Exibir no LCD a velocidade em rpm
   show_lcd(rpm);
 
-  //Utilizar o comando para verificar qual acao realizar no motor
-  char* answer = read_serial();
-  check_serial(answer);
+  if(Serial.available()){
+    //Utilizar o comando para verificar qual acao realizar no motor
+    char* answer = read_serial();
+    check_serial(answer);
+  }
 }
