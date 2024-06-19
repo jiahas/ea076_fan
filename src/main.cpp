@@ -94,9 +94,11 @@ void show_lcd(int rpm){
   snprintf(lcd_rpm,sizeof(lcd_rpm),"ROTACAO:%04d RPM",rpm);
 
   //Escreve o texto da rotacao do motor em rpm
+  lcd.setCursor(0,0);
   lcd.print(lcd_rpm);
 
   //Escreve o texto centrado na segunda linha do LCD
+  lcd.setCursor(0,1);
   lcd.print("  (ESTIMATIVA)  ");
 }
 
@@ -344,9 +346,6 @@ void setup(){
   // Desabilita interrupcoes globais
   cli();
 
-  //Inicializa o LCD com os pinos da interface
-  lcd.begin(16, 2);
-
   // Inicializa a comunicacao I2C
   Wire.begin();
 
@@ -371,6 +370,9 @@ void setup(){
 
   // Habilita Serial com baud rate 9600
   Serial.begin(9600);
+
+  //Inicializa o LCD com os pinos da interface
+  lcd.begin(16, 2);
 }
 
 //Varredura padrao
