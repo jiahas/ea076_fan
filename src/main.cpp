@@ -13,14 +13,12 @@ char str[9];
 char str_2[9];
 
 // Converten o valor de rpm em numero inteiro de 4 digitos
-char lcd_rpm[16];
+char lcd_rpm[17];
 
 int digitosExibidos[4]; //Guarda os 4 digitos a serem exibidos
 
 //Enderecos das portas de dados do PCF8574 para determinar qual display vai ligar
 int enderecos[4] = {0x70, 0xB0, 0xD0, 0xE0};
-
-volatile unsigned int time1 = 0;
 
 //Cria uma variavel do tipo LiquidCrystal
 LiquidCrystal lcd(4, 5, 7, 8, 9, 10);
@@ -93,19 +91,13 @@ void exibirNumero(int n) {
 //Exibe no LCD a estimativa para rotacao do motor em rpm
 void show_lcd(int rpm){
 
-  snprintf(lcd_rpm,sizeof(lcd_rpm),"ROTACAO:%04dRPM",rpm);
-  //Coloca o cursor na primeira coluna e primeira linha
-  lcd.setCursor(0, 0);
+  snprintf(lcd_rpm,sizeof(lcd_rpm),"ROTACAO:%04d RPM",rpm);
 
   //Escreve o texto da rotacao do motor em rpm
-  // lcd.print(lcd_rpm);
   lcd.print(lcd_rpm);
 
-  //Coloca o cursor na terceira coluna e segunda linha
-  lcd.setCursor(0, 1);
-
   //Escreve o texto centrado na segunda linha do LCD
-  lcd.print(" (ESTIMATIVA)  ");
+  lcd.print("  (ESTIMATIVA)  ");
 }
 
 //Configura o Arduino para mandar os sinais para acionamento do motor
@@ -354,7 +346,6 @@ void setup(){
 
   //Inicializa o LCD com os pinos da interface
   lcd.begin(16, 2);
-  lcd.clear();
 
   // Inicializa a comunicacao I2C
   Wire.begin();
@@ -385,7 +376,7 @@ void setup(){
 //Varredura padrao
 void loop(){
   if (count > 75){
-    rpm = count_rpm*60;
+    rpm = count_rpm*60/2;
   	count = 0;
     count_rpm = 0;
 
